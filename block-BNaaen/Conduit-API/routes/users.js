@@ -10,7 +10,8 @@ router.get('/', function (req, res, next) {
 // registration handler
 
 router.post('/register', async (req, res, next) => {
-  let data = req.body;
+  let data = req.body.user;
+  data.following = false;
   if (!data.username || !data.password || !data.email) {
     return res.status(400).json({
       username: 'username cant be empty',

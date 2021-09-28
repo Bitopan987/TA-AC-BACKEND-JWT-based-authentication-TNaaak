@@ -15,7 +15,7 @@
     "jade": "~1.11.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.0.8",
-    "morgan": "~1.9.1",
-    "slugger": "^1.0.1"
+    "mongoose-slug-generator": "^1.0.4",
+    "morgan": "~1.9.1"
   }
 }
