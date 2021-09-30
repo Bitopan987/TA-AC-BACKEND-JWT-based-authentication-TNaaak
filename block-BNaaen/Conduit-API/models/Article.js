@@ -30,6 +30,7 @@ articleSchema.methods.resultArticle = function (id = null) {
     updatedAt: this.updatedAt,
     favorited: id ? this.favoriteList.includes(id) : false,
     favoritesCount: this.favoritesCount,
+    favoriteList: this.favoriteList,
     author: this.author.displayUser(id),
   };
 };
