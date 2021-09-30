@@ -2,39 +2,26 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt');
 var Schema = mongoose.Schema;
 var jwt = require('jsonwebtoken');
-const Profile = require('./Profile');
-require('dotenv').config();
 
 var userSchema = new Schema(
   {
+    username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    token: String,
-    username: { type: String, unique: true },
-    password: { type: String, required: true, minlength: 5 },
+    password: { type: String, required: true },
     bio: String,
-    image: { type: String, default: null },
-    profile: { type: mongoose.Types.ObjectId, ref: 'Profile' },
-    articles: [{ type: mongoose.Types.ObjectId, ref: 'Article' }],
-    favoritedArticles: [{ type: mongoose.Types.ObjectId, ref: 'Article' }],
-    comments: [{ type: mongoose.Types.ObjectId, red: 'Comment' }],
+    image: String,
+    following: Boolean,
+    followingList: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    followersList: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 );
 
 userSchema.pre('save', async function (next) {
-  try {
+  if (this.password && this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 10);
-    let profileData = {
-      username: this.username,
-      bio: this.bio,
-      image: this.image,
-    };
-    let profile = await Profile.create(profileData);
-    this.profile = profile.id;
-    next();
-  } catch (error) {
-    next(error);
   }
+  next();
 });
 
 userSchema.methods.verifyPassword = async function (password, cb) {
@@ -47,14 +34,8 @@ userSchema.methods.verifyPassword = async function (password, cb) {
 };
 
 userSchema.methods.signToken = async function () {
-  var payload = { userId: this.id, email: this.email };
+  let payload = { userId: this.id, email: this.email, username: this.username };
   try {
-    let profileData = await Profile.findById(this.profile);
-    let payload = {
-      username: profileData.username,
-      bio: profileData.bio,
-      image: profileData.image,
-    };
     let token = await jwt.sign(payload, process.env.SECRET);
     return token;
   } catch (error) {
@@ -66,7 +47,21 @@ userSchema.methods.userJSON = function (token) {
   return {
     username: this.username,
     email: this.email,
+    bio: this.bio,
+    image: this.image,
+
     token: token,
+  };
+};
+
+userSchema.methods.displayUser = function (id = null) {
+  return {
+    username: this.username,
+    bio: this.bio,
+    image: this.image,
+    followingList: this.followingList,
+    followersList: this.followersList,
+    following: id ? this.followersList.includes(id) : false,
   };
 };
 

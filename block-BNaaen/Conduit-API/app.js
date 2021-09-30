@@ -18,9 +18,10 @@ mongoose.connect(
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-// var userRouter = require('./routes/user');
-// var profilesRouter = require('./routes/profiles');
-// var articlesRouter = require('./routes/articles');
+var profileRouter = require('./routes/profiles');
+var articleRouter = require('./routes/articles');
+// var tagRouter = require('./routes/tags');
+var userRouter = require('./routes/user');
 
 var app = express();
 
@@ -36,9 +37,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api', indexRouter);
 app.use('/api/users', usersRouter);
-// app.use('/api/user', userRouter);
-// app.use('/api/profiles', profilesRouter);
-// app.use('/api/articles', articlesRouter);
+app.use('/api/user', userRouter);
+app.use('/api/profiles', profileRouter);
+app.use('/api/articles', articleRouter);
+// app.use('/api/tags', tagRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
