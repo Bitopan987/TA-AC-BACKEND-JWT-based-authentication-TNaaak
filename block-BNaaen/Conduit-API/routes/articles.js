@@ -7,6 +7,7 @@ let Comment = require('../models/Comment');
 let slugger = require('slugger');
 
 // feed articles
+
 router.get('/feed', auth.isLoggedIn, async (req, res, next) => {
   let limit = 20,
     skip = 0;
@@ -35,83 +36,43 @@ router.get('/feed', auth.isLoggedIn, async (req, res, next) => {
     next(error);
   }
 });
+
 //List Articles
-router.get('/', auth.authorizeOpt, async (req, res, next) => {
-  let id = req.user ? req.user.userId : false;
-  var limit = 20,
-    skip = 0;
-  var tags = await Article.find({}).distinct('tagList');
-  var authors = await User.find({}).distinct('_id');
 
-  var tagList,
-    author = null;
-  if (req.query.tag) {
-    tagList = req.query.tag;
-  }
-  if (req.query.limit) {
-    limit = req.query.limit;
-  }
-  if (req.query.skip) {
-    skip = req.query.skip;
-  }
-  if (req.query.author) {
-    console.log('1');
-    var authorName = req.query.author;
-    var user = await User.findOne({ username: authorName });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ errors: { body: ['There is no results for this name'] } });
-    }
-    author = user.id;
-  }
-
+router.get('/', auth.isLoggedIn, async (req, res, next) => {
   try {
-    if (req.query.favorited) {
-      console.log('2');
-      var favorited = req.query.favorited;
-      var user = await User.findOne({ username: favorited });
-      if (!user) {
-        return res
-          .status(400)
-          .json({ errors: { body: ['There is no results for this name'] } });
-      }
-      var articles = await Article.find({
-        tagList: !tagList ? { $in: tags } : tagList,
-        favoriteList: user.id,
-        author: !author ? { $in: authors } : author,
-      })
-        .populate('author')
-        .limit(Number(limit))
-        .skip(Number(skip))
-        .sort({ createdAt: -1 });
-      res.status(200).json({
-        articles: articles.map((arr) => {
-          return arr.resultArticle(id);
-        }),
-        arcticlesCount: articles.length,
-      });
-    } else if (!req.query.favorited) {
-      console.log('yes');
-      var articles = await Article.find({
-        tagList: !tagList ? { $in: tags } : tagList,
-        author: !author ? { $in: authors } : author,
-      })
-        .populate('author')
-        .limit(Number(limit))
-        .skip(Number(skip))
-        .sort({ createdAt: -1 });
-      res.status(200).json({
-        articles: articles.map((arr) => {
-          return arr.resultArticle(id);
-        }),
-        arcticlesCount: articles.length,
-      });
-    } else {
-      return res
-        .status(400)
-        .json({ errors: { body: ['No results for the search'] } });
+    var query = req.query;
+    var filter = {};
+    var limit = 20;
+    var offset = 0;
+
+    if (query.tag) filter.tagList = { $in: [query.tag] };
+    if (query.limit) limit = +query.limit;
+    if (query.offset) offset = +query.offset;
+    if (query.author) {
+      var author = await User.findOne({ username: query.author });
+      filter.author = author.id;
     }
+
+    if (query.favorited) {
+      var user = await User.findOne({ username: query.favorited });
+      filter.favorites = { $in: [user.id] };
+    }
+
+    var articles = await Article.find(filter)
+      .populate('author')
+      .skip(offset)
+      .limit(limit)
+      .sort({ updatedAt: -1 });
+
+    var articlesCount = await Article.find(filter).count();
+
+    res.status(200).json({
+      articles: articles.map((arr) => {
+        return arr.resultArticle();
+      }),
+      articlesCount,
+    });
   } catch (error) {
     next(error);
   }

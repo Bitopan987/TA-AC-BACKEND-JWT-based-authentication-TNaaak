@@ -10,7 +10,6 @@ var userSchema = new Schema(
     password: { type: String, required: true },
     bio: String,
     image: String,
-    following: Boolean,
     followingList: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     followersList: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   },

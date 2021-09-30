@@ -3,8 +3,13 @@ var router = express.Router();
 var User = require('../models/User');
 
 /* GET users listing. */
-router.get('/', function (req, res, next) {
-  res.send('respond with a resource');
+router.get('/', async function (req, res, next) {
+  try {
+    var users = await User.find({});
+    res.json({ users: users });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // registration handler
