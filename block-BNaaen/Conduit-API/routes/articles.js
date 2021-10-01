@@ -6,8 +6,9 @@ let User = require('../models/User');
 let Comment = require('../models/Comment');
 let slugger = require('slugger');
 
-// feed articles
 
+
+// feed articles
 router.get('/feed', auth.isLoggedIn, async (req, res, next) => {
   let limit = 20,
     skip = 0;
@@ -39,13 +40,12 @@ router.get('/feed', auth.isLoggedIn, async (req, res, next) => {
 
 //List Articles
 
-router.get('/', auth.isLoggedIn, async (req, res, next) => {
+router.get('/', auth.authorizeOpt, async (req, res, next) => {
   try {
     var query = req.query;
     var filter = {};
     var limit = 20;
     var offset = 0;
-
     if (query.tag) filter.tagList = { $in: [query.tag] };
     if (query.limit) limit = +query.limit;
     if (query.offset) offset = +query.offset;
@@ -53,12 +53,10 @@ router.get('/', auth.isLoggedIn, async (req, res, next) => {
       var author = await User.findOne({ username: query.author });
       filter.author = author.id;
     }
-
     if (query.favorited) {
       var user = await User.findOne({ username: query.favorited });
       filter.favorites = { $in: [user.id] };
     }
-
     var articles = await Article.find(filter)
       .populate('author')
       .skip(offset)
@@ -79,6 +77,7 @@ router.get('/', auth.isLoggedIn, async (req, res, next) => {
 });
 
 // Get all tags
+
 router.get('/tags', async (req, res, next) => {
   try {
     let tags = await Article.find({}).distinct('tagList');
@@ -269,13 +268,13 @@ router.post('/:slug/favorite', auth.isLoggedIn, async (req, res, next) => {
         .status(400)
         .json({ errors: { body: ['Theres is no article for this search'] } });
     }
-    let user = await User.findById(req.user.userId);
-    if (!article.favoriteList.includes(user.id)) {
+   
+    if (!article.favoriteList.includes(req.user.userId)) {
       article = await Article.findOneAndUpdate(
         { slug },
-        { $inc: { favoritesCount: 1 }, $push: { favoriteList: user.id } }
+        { $inc: { favoritesCount: 1 }, $push: { favoriteList:req.user.userId} }
       ).populate('author');
-      return res.status(200).json({ article: article.resultArticle(user.id) });
+      return res.status(200).json({ article: article.resultArticle(req.user.userId) });
     } else {
       return res.status(200).json({
         errors: { body: ['Article is already added in your favorite list'] },

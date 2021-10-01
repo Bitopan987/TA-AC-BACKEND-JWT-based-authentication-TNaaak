@@ -9,6 +9,7 @@ var userSchema = new Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     bio: String,
+    following: Boolean,
     image: String,
     followingList: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     followersList: [{ type: Schema.Types.ObjectId, ref: 'User' }],
@@ -58,8 +59,6 @@ userSchema.methods.displayUser = function (id = null) {
     username: this.username,
     bio: this.bio,
     image: this.image,
-    followingList: this.followingList,
-    followersList: this.followersList,
     following: id ? this.followersList.includes(id) : false,
   };
 };
